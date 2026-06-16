@@ -8,6 +8,38 @@
   --teal: #5ab4aa;
   --gold: #d7a849;
   --shadow: 0 30px 90px rgba(5, 10, 9, 0.35);
+  --control-bg: rgba(18, 33, 29, 0.72);
+  --control-border: rgba(255, 247, 231, 0.36);
+  --control-muted: rgba(255, 247, 231, 0.72);
+  --control-text: #fff7e7;
+  --gratitude-bg: linear-gradient(135deg, rgba(238, 245, 240, 0.96), rgba(255, 247, 231, 0.98)), #f7f2e8;
+  --gratitude-border: rgba(215, 168, 73, 0.26);
+  --story-border: rgba(215, 168, 73, 0.3);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --ink: #f7efe0;
+  --soft-ink: #c9d4cd;
+  --paper: #101715;
+  --mist: #16231f;
+  --cream: #fff7e7;
+  --berry: #f08a98;
+  --teal: #72d0c6;
+  --gold: #e1bb62;
+  --shadow: 0 34px 100px rgba(0, 0, 0, 0.54);
+  --control-bg: rgba(7, 13, 12, 0.76);
+  --control-border: rgba(255, 247, 231, 0.24);
+  --control-muted: rgba(255, 247, 231, 0.64);
+  --control-text: #fff7e7;
+  --gratitude-bg: linear-gradient(135deg, rgba(16, 23, 21, 0.98), rgba(32, 43, 38, 0.98)), #101715;
+  --gratitude-border: rgba(225, 187, 98, 0.24);
+  --story-border: rgba(225, 187, 98, 0.22);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
 }
 
 * {
@@ -26,6 +58,11 @@ html {
 
 body {
   margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  transition:
+    background-color 280ms ease,
+    color 280ms ease;
 }
 
 body.has-splash {
@@ -46,10 +83,10 @@ body.has-splash {
 
 .theme-toggle,
 .motion-control {
-  border: 1px solid rgba(255, 247, 231, 0.36);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
-  background: rgba(18, 33, 29, 0.72);
-  color: var(--cream);
+  background: var(--control-bg);
+  color: var(--control-text);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
 }
@@ -70,7 +107,7 @@ body.has-splash {
 }
 
 .control-label {
-  color: rgba(255, 247, 231, 0.72);
+  color: var(--control-muted);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -92,7 +129,7 @@ body.has-splash {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  color: rgba(255, 247, 231, 0.72);
+  color: var(--control-muted);
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -318,6 +355,33 @@ body.has-splash {
   animation: lightDrift 14s ease-in-out infinite alternate;
 }
 
+
+[data-theme="dark"] .hero::after {
+  background:
+    radial-gradient(circle at 58% 63%, rgba(225, 187, 98, 0.24), rgba(225, 187, 98, 0) 24%),
+    linear-gradient(90deg, rgba(2, 7, 6, 0.92) 0%, rgba(4, 12, 11, 0.84) 34%, rgba(4, 9, 8, 0.42) 64%, rgba(3, 6, 6, 0.32) 100%),
+    linear-gradient(180deg, rgba(5, 8, 8, 0.24) 0%, rgba(3, 6, 6, 0.9) 100%);
+}
+
+[data-theme="light"] .hero::after {
+  background:
+    radial-gradient(circle at 58% 63%, rgba(215, 168, 73, 0.3), rgba(215, 168, 73, 0) 24%),
+    linear-gradient(90deg, rgba(3, 9, 8, 0.82) 0%, rgba(5, 15, 13, 0.68) 34%, rgba(6, 11, 10, 0.26) 64%, rgba(4, 7, 7, 0.16) 100%),
+    linear-gradient(180deg, rgba(5, 8, 8, 0.12) 0%, rgba(5, 8, 8, 0.78) 100%);
+}
+
+[data-theme="dark"] .gratitude h2 {
+  color: var(--cream);
+}
+
+[data-theme="dark"] .gratitude p:last-child {
+  color: rgba(255, 247, 231, 0.78);
+}
+
+[data-theme="dark"] .section-kicker {
+  color: var(--berry);
+}
+
 .hero__content {
   position: relative;
   z-index: 1;
@@ -460,7 +524,7 @@ h1 {
   isolation: isolate;
   color: var(--cream);
   background: #090c0c;
-  border-top: 1px solid rgba(215, 168, 73, 0.3);
+  border-top: 1px solid var(--story-border);
 }
 
 .story::before,
@@ -565,10 +629,8 @@ h1 {
 }
 
 .gratitude {
-  background:
-    linear-gradient(135deg, rgba(238, 245, 240, 0.96), rgba(255, 247, 231, 0.98)),
-    #f7f2e8;
-  border-top: 1px solid rgba(215, 168, 73, 0.26);
+  background: var(--gratitude-bg);
+  border-top: 1px solid var(--gratitude-border);
 }
 
 .gratitude__inner {
