@@ -108,6 +108,8 @@ For cPanel, upload the contents of `public/` into `public_html`.
 
 The Apache rewrite rules in `public/.htaccess` let friendly URLs like `/en/test-en` load the same page. JavaScript handles the language and guest name after that.
 
+See [docs/DEPLOY.md](docs/DEPLOY.md) for a short cPanel upload checklist.
+
 ## Logs
 
 The live site writes lightweight visit events to `public/logs/access-log.txt`.
