@@ -24,6 +24,7 @@ wedding-thank-you/
 ├── data/                # Input data for local tools
 ├── generated/           # Tool output, such as QR code PNGs
 ├── tools/               # Local development and generation scripts
+├── CHANGELOG.md
 ├── README.md
 ├── LICENSE
 └── requirements.txt
