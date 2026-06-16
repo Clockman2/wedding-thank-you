@@ -8,5 +8,5 @@ node_modules/
 __pycache__/
 *.py[cod]
 
-logs/*.txt
-!logs/.htaccess
+public/logs/*.txt
+!public/logs/.htaccess

@@ -4,7 +4,7 @@ import { appendFile, mkdir, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL(".", import.meta.url));
+const root = fileURLToPath(new URL("../public/", import.meta.url));
 const port = Number.parseInt(process.env.PORT || "4173", 10);
 const host = process.env.HOST || "127.0.0.1";
 
@@ -158,5 +158,6 @@ const server = createServer(async (request, response) => {
 
 server.listen(port, host, () => {
   console.log(`Wedding thank-you site running at http://${host}:${port}`);
-  console.log(`Try http://${host}:${port}/en/mom-and-dad`);
+  console.log(`Serving ${root}`);
+  console.log(`Try http://${host}:${port}/en/test-en`);
 });

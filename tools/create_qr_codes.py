@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError as exc:  # pragma: no cover - helpful CLI failure path.
     raise SystemExit(
         "Missing QR/image dependencies. Install them with:\n"
-        "  python3 -m pip install -r requirements-qr.txt"
+        "  python3 -m pip install -r requirements.txt"
     ) from exc
 
 
@@ -195,7 +195,7 @@ def compose_qr_card(
 
 def create_qr_codes_from_csv(
     csv_path: str | Path,
-    output_dir: str | Path = "qr_codes",
+    output_dir: str | Path = "generated/qr-codes",
     *,
     base_url: str = DEFAULT_BASE_URL,
     qr_pixels: int = 900,
@@ -227,8 +227,8 @@ def create_qr_codes_from_csv(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create thank-you QR-code PNGs.")
-    parser.add_argument("--csv", default="qr_recipients.csv", help="Recipient CSV path.")
-    parser.add_argument("--out", default="qr_codes", help="Output folder for PNGs.")
+    parser.add_argument("--csv", default="data/qr-recipients.csv", help="Recipient CSV path.")
+    parser.add_argument("--out", default="generated/qr-codes", help="Output folder for PNGs.")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="Site base URL.")
     parser.add_argument("--qr-pixels", type=int, default=900, help="QR code square size in pixels.")
     parser.add_argument("--font-size", type=int, default=52, help="Message font size.")

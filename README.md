@@ -9,10 +9,30 @@ The public demo data is intentionally generic. It includes one English test rout
 
 The page reads the last part of the URL, turns it into a guest label, and swaps in the right language copy. A guest can also have a small splash photo before the note.
 
+## Project Layout
+
+```text
+wedding-thank-you/
+├── public/              # Files to upload to cPanel public_html
+│   ├── index.html
+│   ├── .htaccess
+│   ├── log.php
+│   ├── css/
+│   ├── js/
+│   ├── assets/
+│   └── logs/
+├── data/                # Input data for local tools
+├── generated/           # Tool output, such as QR code PNGs
+├── tools/               # Local development and generation scripts
+├── README.md
+├── LICENSE
+└── requirements.txt
+```
+
 ## Local Preview
 
 ```bash
-node server.mjs
+node tools/dev-server.mjs
 ```
 
 Then open:
@@ -20,7 +40,7 @@ Then open:
 - `http://127.0.0.1:4173/en/test-en`
 - `http://127.0.0.1:4173/pt/test-pt`
 
-The local server also handles `/log.php`, so logging can be tested without PHP.
+The local server uses `public/` as the web root and handles `/log.php`, so logging can be tested without PHP.
 
 ## Guest Messages
 
@@ -29,7 +49,7 @@ Most routes work without being added anywhere. For example:
 - `/en/example-guest` becomes `Dear Example Guest,`
 - `/pt/pessoa-teste` becomes `Olá, Pessoa Teste,`
 
-Use `guests.js` for guests who need a custom greeting, message, signature, or splash photo.
+Use `public/js/site-config.js` for guests who need a custom greeting, message, signature, or splash photo.
 
 ```js
 "test-en": {
@@ -51,21 +71,21 @@ Use `guests.js` for guests who need a custom greeting, message, signature, or sp
 
 ## Photos
 
-Site-ready images live in `assets/`. The demo guest splash images are:
+Site-ready images live in `public/assets/`. The demo guest splash images are:
 
-- `assets/guests/test-en.jpg`
-- `assets/guests/test-pt.jpg`
+- `public/assets/guests/test-en.jpg`
+- `public/assets/guests/test-pt.jpg`
 
 ## QR Codes
 
-Guest QR cards are generated from `qr_recipients.csv`.
+Guest QR cards are generated from `data/qr-recipients.csv`.
 
 ```bash
-python3 -m pip install -r requirements-qr.txt
+python3 -m pip install -r requirements.txt
 python3 tools/create_qr_codes.py
 ```
 
-The PNGs are written to `qr_codes/`. Blank `url` and `message` columns use the default URL and this label:
+The PNGs are written to `generated/qr-codes/`. Blank `url` and `message` columns use the default URL and this label:
 
 ```text
 Scan me!
@@ -74,21 +94,12 @@ Test EN
 
 ## Upload
 
-For cPanel, upload the site files into `public_html`:
+For cPanel, upload the contents of `public/` into `public_html`.
 
-- `index.html`
-- `styles.css`
-- `script.js`
-- `guests.js`
-- `log.php`
-- `.htaccess`
-- `assets/`
-- `logs/.htaccess`
-
-Apache rewrite rules let friendly URLs like `/en/test-en` load the same page. JavaScript handles the language and guest name after that.
+The Apache rewrite rules in `public/.htaccess` let friendly URLs like `/en/test-en` load the same page. JavaScript handles the language and guest name after that.
 
 ## Logs
 
-The live site writes lightweight visit events to `logs/access-log.txt`.
+The live site writes lightweight visit events to `public/logs/access-log.txt`.
 
-That file is ignored by Git. Keep `logs/.htaccess` in the repo because it blocks direct browser access to the log on cPanel.
+That file is ignored by Git. Keep `public/logs/.htaccess` in the repo because it blocks direct browser access to the log on cPanel.
