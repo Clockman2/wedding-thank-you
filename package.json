@@ -1,0 +1,11 @@
+{
+  "name": "wedding-thank-you",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node tools/dev-server.mjs",
+    "check": "node --check public/js/app.js && node --check public/js/site-config.js && node --check tools/dev-server.mjs",
+    "qr": "python3 tools/create_qr_codes.py"
+  }
+}

@@ -32,7 +32,7 @@ wedding-thank-you/
 ## Local Preview
 
 ```bash
-node tools/dev-server.mjs
+npm run dev
 ```
 
 Then open:
@@ -76,13 +76,23 @@ Site-ready images live in `public/assets/`. The demo guest splash images are:
 - `public/assets/guests/test-en.jpg`
 - `public/assets/guests/test-pt.jpg`
 
+## Useful Commands
+
+```bash
+npm run dev
+npm run check
+npm run qr
+```
+
+`npm run check` validates the JavaScript files. `npm run qr` rebuilds the QR code PNGs from `data/qr-recipients.csv`.
+
 ## QR Codes
 
 Guest QR cards are generated from `data/qr-recipients.csv`.
 
 ```bash
 python3 -m pip install -r requirements.txt
-python3 tools/create_qr_codes.py
+npm run qr
 ```
 
 The PNGs are written to `generated/qr-codes/`. Blank `url` and `message` columns use the default URL and this label:
