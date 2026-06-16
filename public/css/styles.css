@@ -15,6 +15,10 @@
   --gratitude-bg: linear-gradient(135deg, rgba(238, 245, 240, 0.96), rgba(255, 247, 231, 0.98)), #f7f2e8;
   --gratitude-border: rgba(215, 168, 73, 0.26);
   --story-border: rgba(215, 168, 73, 0.3);
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --tilt-x: 0;
+  --tilt-y: 0;
   color-scheme: light;
 }
 
@@ -143,7 +147,130 @@ body.has-splash {
 }
 
 .fun-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
   display: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+[data-motion="fun"] .fun-layer:not([hidden]) {
+  display: block;
+}
+
+.fun-sparkle {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  font-size: calc(var(--size) * 1.8);
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  text-shadow: 0 0 18px rgba(215, 168, 73, 0.42);
+  transform: translate3d(-50%, -50%, 0);
+  animation: funSparkle var(--duration) ease-in-out var(--delay) infinite;
+}
+
+.fun-sparkle:nth-child(3n) {
+  color: var(--teal);
+}
+
+.fun-sparkle:nth-child(4n) {
+  color: var(--berry);
+}
+
+
+[data-motion="fun"] .site-controls {
+  animation: controlsBob 5.8s ease-in-out infinite;
+}
+
+[data-motion="fun"] .hero::before {
+  animation-duration: 9s;
+  filter: saturate(1.18) contrast(1.08);
+}
+
+[data-motion="fun"] .hero::after {
+  background:
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(90, 180, 170, 0.34), rgba(90, 180, 170, 0) 18%),
+    radial-gradient(circle at 58% 63%, rgba(215, 168, 73, 0.34), rgba(215, 168, 73, 0) 25%),
+    linear-gradient(90deg, rgba(3, 9, 8, 0.86) 0%, rgba(5, 15, 13, 0.72) 34%, rgba(6, 11, 10, 0.22) 64%, rgba(4, 7, 7, 0.18) 100%),
+    linear-gradient(180deg, rgba(5, 8, 8, 0.08) 0%, rgba(5, 8, 8, 0.82) 100%);
+  animation-duration: 7s;
+}
+
+[data-motion="fun"] .hero__content {
+  transform: translate3d(calc(var(--tilt-x) * -18px), calc(var(--tilt-y) * -12px), 0);
+  transition: transform 220ms ease-out;
+}
+
+[data-motion="fun"] h1 {
+  transform-origin: left center;
+  animation: titleBreathe 4.8s ease-in-out infinite;
+}
+
+[data-motion="fun"] .eyebrow {
+  animation: softWiggle 3.4s ease-in-out infinite;
+}
+
+[data-motion="fun"] .signature {
+  animation: signatureSway 4.2s ease-in-out infinite;
+}
+
+[data-motion="fun"] .scroll-cue {
+  animation: superCueFloat 1.35s ease-in-out infinite;
+}
+
+[data-motion="fun"] .scroll-cue__mark {
+  animation: superRingPulse 1.5s ease-in-out infinite;
+}
+
+[data-motion="fun"] .guest-splash.is-visible .guest-splash__card {
+  animation: splashFloat 3.4s ease-in-out 300ms infinite;
+}
+
+[data-motion="fun"] .story::before {
+  animation-duration: 10s;
+  filter: saturate(1.22) contrast(1.08);
+}
+
+[data-motion="fun"] .story::after {
+  background:
+    linear-gradient(90deg, rgba(7, 9, 9, 0.1) 0%, rgba(7, 9, 9, 0.48) 38%, rgba(7, 9, 9, 0.9) 62%, rgba(7, 9, 9, 0.98) 100%),
+    linear-gradient(180deg, rgba(7, 9, 9, 0.02) 0%, rgba(7, 9, 9, 0.76) 100%);
+  animation-duration: 7.5s;
+}
+
+[data-motion="fun"] .story__copy p {
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+[data-motion="fun"] .story__copy p:hover {
+  color: var(--cream);
+  transform: translateX(8px);
+}
+
+[data-motion="fun"] .gratitude__inner {
+  position: relative;
+}
+
+[data-motion="fun"] .gratitude__inner::before {
+  position: absolute;
+  top: clamp(18px, 4vw, 36px);
+  left: 0;
+  width: min(280px, 40vw);
+  height: 2px;
+  background: linear-gradient(90deg, var(--berry), var(--gold), var(--teal), transparent);
+  content: "";
+  transform-origin: left;
+  animation: colorRibbon 4.6s ease-in-out infinite;
 }
 
 [data-motion="off"] *,
@@ -657,6 +784,103 @@ h1 {
   color: var(--soft-ink);
   font-size: clamp(1.08rem, 1.7vw, 1.32rem);
   line-height: 1.75;
+}
+
+
+@keyframes funSparkle {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, 24px, 0) scale(0.4) rotate(0deg);
+  }
+
+  18%,
+  72% {
+    opacity: 0.82;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-50% + (var(--drift) * 46px)), -86px, 0) scale(1.15) rotate(180deg);
+  }
+}
+
+@keyframes controlsBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes titleBreathe {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  50% {
+    transform: scale(1.018) rotate(-0.35deg);
+  }
+}
+
+@keyframes softWiggle {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(7px);
+  }
+}
+
+@keyframes signatureSway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(-0.6deg);
+  }
+}
+
+@keyframes superCueFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(-1deg);
+  }
+}
+
+@keyframes superRingPulse {
+  0%,
+  100% {
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28), 0 0 0 0 rgba(90, 180, 170, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32), 0 0 0 13px rgba(90, 180, 170, 0);
+  }
+}
+
+@keyframes colorRibbon {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scaleX(0.68);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }
 
 @keyframes photoDrift {

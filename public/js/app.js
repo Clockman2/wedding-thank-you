@@ -101,6 +101,69 @@
     }
   }
 
+  function fillFunLayer() {
+    const layer = document.getElementById("fun-layer");
+
+    if (!layer || layer.children.length) {
+      return;
+    }
+
+    const marks = ["+", "*", ".", "x"];
+
+    for (let index = 0; index < 34; index += 1) {
+      const mark = document.createElement("span");
+      const size = 7 + (index % 5) * 2;
+      mark.className = "fun-sparkle";
+      mark.textContent = marks[index % marks.length];
+      mark.style.setProperty("--x", `${(index * 29) % 100}%`);
+      mark.style.setProperty("--y", `${(index * 47) % 100}%`);
+      mark.style.setProperty("--size", `${size}px`);
+      mark.style.setProperty("--delay", `${(index % 12) * -0.42}s`);
+      mark.style.setProperty("--duration", `${5.4 + (index % 7) * 0.45}s`);
+      mark.style.setProperty("--drift", `${index % 2 === 0 ? 1 : -1}`);
+      layer.append(mark);
+    }
+  }
+
+  function updateFunLayer(mode) {
+    const layer = document.getElementById("fun-layer");
+
+    if (!layer) {
+      return;
+    }
+
+    if (mode === "fun") {
+      fillFunLayer();
+      layer.hidden = false;
+    } else {
+      layer.hidden = true;
+    }
+  }
+
+  function setupFunPointer() {
+    let frame = 0;
+
+    window.addEventListener("pointermove", (event) => {
+      if (getMotionMode() !== "fun") {
+        return;
+      }
+
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+
+      frame = window.requestAnimationFrame(() => {
+        const x = event.clientX / Math.max(window.innerWidth, 1);
+        const y = event.clientY / Math.max(window.innerHeight, 1);
+        document.documentElement.style.setProperty("--pointer-x", `${(x * 100).toFixed(1)}%`);
+        document.documentElement.style.setProperty("--pointer-y", `${(y * 100).toFixed(1)}%`);
+        document.documentElement.style.setProperty("--tilt-x", (x - 0.5).toFixed(3));
+        document.documentElement.style.setProperty("--tilt-y", (y - 0.5).toFixed(3));
+        frame = 0;
+      });
+    });
+  }
+
   function setupDisplayPreferences() {
     const root = document.documentElement;
     const themeToggle = document.getElementById("theme-toggle");
@@ -127,6 +190,7 @@
     function setMotion(mode) {
       const safeMode = motionValues.includes(mode) ? mode : "default";
       root.dataset.motion = safeMode;
+      updateFunLayer(safeMode);
       if (motionControl) {
         motionControl.value = String(motionValues.indexOf(safeMode));
         motionControl.setAttribute("aria-valuetext", motionLabels[safeMode]);
@@ -135,6 +199,7 @@
 
     setTheme(root.dataset.theme === "dark" ? "dark" : "light");
     setMotion(root.dataset.motion || "default");
+    setupFunPointer();
 
     themeToggle?.addEventListener("click", () => {
       const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
