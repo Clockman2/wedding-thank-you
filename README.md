@@ -79,6 +79,8 @@ Site-ready images live in `public/assets/`. The demo guest splash images are:
 - `public/assets/guests/test-en.jpg`
 - `public/assets/guests/test-pt.jpg`
 
+See `public/assets/README.md` for notes on public image assets.
+
 ## Useful Commands
 
 ```bash
