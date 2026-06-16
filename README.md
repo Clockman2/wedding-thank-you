@@ -69,6 +69,8 @@ Use `public/js/site-config.js` for guests who need a custom greeting, message, s
 }
 ```
 
+See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for a fuller guide to guests, splash photos, and QR codes.
+
 ## Photos
 
 Site-ready images live in `public/assets/`. The demo guest splash images are:
