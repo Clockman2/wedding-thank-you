@@ -24,7 +24,6 @@ wedding-thank-you/
 ├── data/                # Input data for local tools
 ├── generated/           # Tool output, such as QR code PNGs
 ├── tools/               # Local development and generation scripts
-├── CHANGELOG.md
 ├── README.md
 ├── LICENSE
 └── requirements.txt
@@ -43,44 +42,6 @@ Then open:
 
 The local server uses `public/` as the web root and handles `/log.php`, so logging can be tested without PHP.
 
-## Guest Messages
-
-Most routes work without being added anywhere. For example:
-
-- `/en/example-guest` becomes `Dear Example Guest,`
-- `/pt/pessoa-teste` becomes `Olá, Pessoa Teste,`
-
-Use `public/js/site-config.js` for guests who need a custom greeting, message, signature, or splash photo.
-
-```js
-"test-en": {
-  en: {
-    greeting: "Dear Test EN,"
-  },
-  splash: {
-    image: "/assets/guests/test-en.jpg",
-    rotation: "1.35deg",
-    en: {
-      kicker: "Test photo",
-      title: "Glad you are here, Test EN",
-      caption: "A simple demo splash photo.",
-      alt: "Demo guest photo for the English test route"
-    }
-  }
-}
-```
-
-See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for a fuller guide to guests, splash photos, and QR codes.
-
-## Photos
-
-Site-ready images live in `public/assets/`. The demo guest splash images are:
-
-- `public/assets/guests/test-en.jpg`
-- `public/assets/guests/test-pt.jpg`
-
-See `public/assets/README.md` for notes on public image assets.
-
 ## Useful Commands
 
 ```bash
@@ -91,9 +52,71 @@ npm run qr
 
 `npm run check` validates the JavaScript files. `npm run qr` rebuilds the QR code PNGs from `data/qr-recipients.csv`.
 
+## Guest Messages
+
+Most routes work without being added anywhere. For example:
+
+- `/en/example-guest` becomes `Dear Example Guest,`
+- `/pt/pessoa-teste` becomes `Olá, Pessoa Teste,`
+
+Use `public/js/site-config.js` for guests who need a custom greeting, message, signature, or splash photo.
+
+```js
+"example-guest": {
+  en: {
+    greeting: "Dear Example Guest,",
+    message: "Thanks for celebrating with us.",
+    signature: "With gratitude, the hosts"
+  }
+}
+```
+
+For Brazilian Portuguese, use a `pt` block:
+
+```js
+"pessoa-teste": {
+  pt: {
+    greeting: "Olá, Pessoa Teste,",
+    message: "Obrigado por celebrar conosco.",
+    signature: "Com gratidão, os anfitriões"
+  }
+}
+```
+
+## Splash Photos
+
+Site-ready images live in `public/assets/`. Guest splash photos live in `public/assets/guests/`.
+
+```js
+"example-guest": {
+  splash: {
+    image: "/assets/guests/example-guest.jpg",
+    rotation: "1.25deg",
+    en: {
+      kicker: "A favorite memory",
+      title: "Glad you are here, Example Guest",
+      caption: "A short caption for the photo.",
+      alt: "Description of the photo"
+    }
+  }
+}
+```
+
+The splash text is language-specific. Add `en`, `pt`, or both.
+
+For a public demo repository, keep images generic and remove private EXIF metadata before committing.
+
 ## QR Codes
 
 Guest QR cards are generated from `data/qr-recipients.csv`.
+
+```csv
+filename_label,name,url,message
+example_guest_en,Example Guest,,
+pessoa_teste_pt,Pessoa Teste,,
+```
+
+Then run:
 
 ```bash
 python3 -m pip install -r requirements.txt
@@ -113,12 +136,36 @@ For cPanel, upload the contents of `public/` into `public_html`.
 
 The Apache rewrite rules in `public/.htaccess` let friendly URLs like `/en/test-en` load the same page. JavaScript handles the language and guest name after that.
 
-See [docs/DEPLOY.md](docs/DEPLOY.md) for a short cPanel upload checklist.
+Make sure `.htaccess` files are visible when uploading. Some file managers hide dotfiles by default.
 
-## Logs
+## Logs And Privacy
 
 The live site writes lightweight visit events to `public/logs/access-log.txt`.
 
-That file is ignored by Git. Keep `public/logs/.htaccess` in the repo because it blocks direct browser access to the log on cPanel.
+Logged values can include:
 
-See [docs/PRIVACY.md](docs/PRIVACY.md) for notes on what the logger records.
+- URL path and query string
+- Guest slug and language
+- Referrer
+- Browser language and user agent
+- Viewport and screen size
+- IP address, as seen by the server
+- Basic interaction events, such as page view, story click, and page exit
+
+Keep `public/logs/.htaccess` in the repo because it blocks direct browser access to the log on cPanel.
+
+If you do not want logging, remove the `track(...)` calls in `public/js/app.js` and remove `public/log.php` from the deployed site.
+
+For real deployments, tell guests if you are collecting visit logs.
+
+## Changelog
+
+### Unreleased
+
+- Keep project documentation consolidated in `README.md`.
+
+### 1.0.0
+
+- Publish a generic demo version with English and Brazilian Portuguese routes.
+- Organize deployable files under `public/`.
+- Include QR code generation from CSV input.
