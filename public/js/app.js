@@ -85,6 +85,72 @@
     return Math.min(Math.max(value, min), max);
   }
 
+  function getMotionMode() {
+    return document.documentElement.dataset.motion || "default";
+  }
+
+  function shouldUseMotion() {
+    return getMotionMode() !== "off";
+  }
+
+  function savePreference(name, value) {
+    try {
+      window.localStorage.setItem(name, value);
+    } catch {
+      // Display preferences still apply for this page load when storage is unavailable.
+    }
+  }
+
+  function setupDisplayPreferences() {
+    const root = document.documentElement;
+    const themeToggle = document.getElementById("theme-toggle");
+    const themeText = document.getElementById("theme-toggle-text");
+    const motionControl = document.getElementById("motion-control");
+    const motionValues = ["off", "default", "fun"];
+    const motionLabels = {
+      off: "No motion",
+      default: "Default motion",
+      fun: "Super fun mode"
+    };
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      if (themeText) {
+        themeText.textContent = theme === "dark" ? "Dark" : "Light";
+      }
+      if (themeToggle) {
+        themeToggle.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+        themeToggle.setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} mode`);
+      }
+    }
+
+    function setMotion(mode) {
+      const safeMode = motionValues.includes(mode) ? mode : "default";
+      root.dataset.motion = safeMode;
+      if (motionControl) {
+        motionControl.value = String(motionValues.indexOf(safeMode));
+        motionControl.setAttribute("aria-valuetext", motionLabels[safeMode]);
+      }
+    }
+
+    setTheme(root.dataset.theme === "dark" ? "dark" : "light");
+    setMotion(root.dataset.motion || "default");
+
+    themeToggle?.addEventListener("click", () => {
+      const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
+      setTheme(nextTheme);
+      savePreference("thankYouTheme", nextTheme);
+      track("preference_change", { preference: "theme", value: nextTheme });
+    });
+
+    motionControl?.addEventListener("input", () => {
+      const nextMotion = motionValues[Number(motionControl.value)] || "default";
+      setMotion(nextMotion);
+      savePreference("thankYouMotion", nextMotion);
+      track("preference_change", { preference: "motion", value: nextMotion });
+    });
+  }
+
   function personalizeMessage(message = {}, replacements) {
     return ["greeting", "message", "signature"].reduce((personalized, field) => {
       if (message[field]) {
@@ -452,6 +518,7 @@
     });
   }
 
+  setupDisplayPreferences();
   setupGuestSplash(guestConfig, language, { guestName });
 
   const story = document.getElementById("story");
@@ -462,7 +529,7 @@
     scrollCue.addEventListener("click", (event) => {
       event.preventDefault();
       track("story_click", { scroll_y: Math.round(window.scrollY) });
-      story.scrollIntoView({ behavior: "smooth", block: "start" });
+      story.scrollIntoView({ behavior: shouldUseMotion() ? "smooth" : "auto", block: "start" });
     });
   }
 

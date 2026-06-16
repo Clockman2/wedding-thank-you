@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <title>Thank You</title>
     <meta
       name="description"
@@ -10,9 +11,46 @@
     >
     <link rel="preload" href="/assets/rings-bible-bg.jpg" as="image">
     <link rel="preload" href="/assets/story-figurines-bg.jpg" as="image">
+    <script>
+      (() => {
+        const root = document.documentElement;
+        let storedTheme = "";
+        let storedMotion = "";
+
+        try {
+          storedTheme = window.localStorage.getItem("thankYouTheme") || "";
+          storedMotion = window.localStorage.getItem("thankYouMotion") || "";
+        } catch {
+          storedTheme = "";
+          storedMotion = "";
+        }
+
+        const systemTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        root.dataset.theme = storedTheme || systemTheme;
+        root.dataset.motion = storedMotion || (reducedMotion ? "off" : "default");
+      })();
+    </script>
     <link rel="stylesheet" href="/css/styles.css">
   </head>
   <body>
+    <div class="site-controls" aria-label="Display preferences">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">
+        <span class="control-label">Theme</span>
+        <span class="control-value" id="theme-toggle-text">Light</span>
+      </button>
+      <label class="motion-control" for="motion-control">
+        <span class="control-label">Motion</span>
+        <input id="motion-control" type="range" min="0" max="2" step="1" value="1" aria-valuetext="Default motion">
+        <span class="motion-control__labels" aria-hidden="true">
+          <span>None</span>
+          <span>Default</span>
+          <span>Fun</span>
+        </span>
+      </label>
+    </div>
+    <div class="fun-layer" id="fun-layer" aria-hidden="true"></div>
+
     <div class="guest-splash" id="guest-splash" hidden aria-hidden="true">
       <button class="guest-splash__backdrop" type="button" data-splash-close aria-label="Close photo"></button>
       <figure class="guest-splash__card" role="dialog" aria-modal="true" aria-labelledby="guest-splash-title">
