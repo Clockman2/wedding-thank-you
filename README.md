@@ -120,3 +120,5 @@ See [docs/DEPLOY.md](docs/DEPLOY.md) for a short cPanel upload checklist.
 The live site writes lightweight visit events to `public/logs/access-log.txt`.
 
 That file is ignored by Git. Keep `public/logs/.htaccess` in the repo because it blocks direct browser access to the log on cPanel.
+
+See [docs/PRIVACY.md](docs/PRIVACY.md) for notes on what the logger records.
