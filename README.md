@@ -42,6 +42,15 @@ Then open:
 
 The local server uses `public/` as the web root and handles `/log.php`, so logging can be tested without PHP.
 
+## Display Controls
+
+The page includes two small display controls:
+
+- Theme: switches between light and dark mode.
+- Motion: switches between no motion, default motion, and super fun mode.
+
+Preferences are saved in the browser with `localStorage`.
+
 ## Useful Commands
 
 ```bash
