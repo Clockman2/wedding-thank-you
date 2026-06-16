@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /
+Options -MultiViews
+
+RewriteRule ^logs(/|$) - [F,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^(en|pt)(/.*)?$ /index.html [L]
+RewriteRule ^[^.]+$ /index.html [L]
+
+ErrorDocument 404 /index.html

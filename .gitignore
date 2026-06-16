@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+
+node_modules/
+.env
+.env.*
+
+__pycache__/
+*.py[cod]
+
+logs/*.txt
+!logs/.htaccess

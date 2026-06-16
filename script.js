@@ -1,0 +1,511 @@
+(function () {
+  const site = window.THANK_YOU_SITE || {};
+  const messages = site.guests || {};
+  const defaultMessages = site.defaultMessages || { en: site.defaultMessage || {} };
+  const content = site.content || {};
+
+  function getRouteFromUrl() {
+    const pathParts = window.location.pathname
+      .split("/")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const firstPathPart = (pathParts[0] || "").toLowerCase();
+    const language = firstPathPart === "pt" ? "pt" : "en";
+    const slugParts = firstPathPart === "pt" || firstPathPart === "en"
+      ? pathParts.slice(1)
+      : pathParts;
+    const lastPathPart = slugParts[slugParts.length - 1] || "";
+    const cleanPathPart = lastPathPart.replace(/\.html$/i, "");
+
+    if (cleanPathPart && cleanPathPart.toLowerCase() !== "index") {
+      return { language, slug: cleanPathPart };
+    }
+
+    return { language, slug: new URLSearchParams(window.location.search).get("to") || "" };
+  }
+
+  function normalizeSlug(value) {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+
+  function toKey(value) {
+    return normalizeSlug(value)
+      .trim()
+      .toLowerCase()
+      .replace(/['"]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function toGuestName(value) {
+    const cleanValue = normalizeSlug(value)
+      .replace(/\.html$/i, "")
+      .replace(/[_+]+/g, " ")
+      .replace(/[-]+/g, " ")
+      .replace(/[^a-zA-Z0-9& ]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!cleanValue) {
+      return "friends and family";
+    }
+
+    return cleanValue
+      .split(" ")
+      .map((word, index) => {
+        const lower = word.toLowerCase();
+        const smallWords = ["and", "or", "the", "of", "to"];
+
+        if (index > 0 && smallWords.includes(lower)) {
+          return lower;
+        }
+
+        if (word === "&") {
+          return "&";
+        }
+
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      })
+      .join(" ");
+  }
+
+  function fillTemplate(text, replacements) {
+    if (!text) {
+      return text;
+    }
+
+    return text.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, token) => replacements[token] || match);
+  }
+
+  function clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function personalizeMessage(message = {}, replacements) {
+    return ["greeting", "message", "signature"].reduce((personalized, field) => {
+      if (message[field]) {
+        personalized[field] = fillTemplate(message[field], replacements);
+      }
+
+      return personalized;
+    }, {});
+  }
+
+  function setText(id, text) {
+    const node = document.getElementById(id);
+    if (node && text) {
+      node.textContent = text;
+    }
+  }
+
+  function getLocalizedGuestMessage(guestConfig, language) {
+    if (!guestConfig) {
+      return null;
+    }
+
+    if (guestConfig[language]) {
+      return guestConfig[language];
+    }
+
+    if (guestConfig.en) {
+      return guestConfig.en;
+    }
+
+    return guestConfig;
+  }
+
+  function toLocale(language) {
+    return language === "pt" ? "pt-BR" : "en";
+  }
+
+  function getLocalizedSplash(guestConfig, language) {
+    if (!guestConfig?.splash) {
+      return null;
+    }
+
+    const splash = guestConfig.splash;
+    const localizedText = splash[language];
+
+    if (!localizedText) {
+      return null;
+    }
+
+    return { ...splash, ...localizedText };
+  }
+
+  function setupGuestSplash(guestConfig, language, replacements) {
+    const splash = getLocalizedSplash(guestConfig, language);
+    const splashNode = document.getElementById("guest-splash");
+    const card = splashNode?.querySelector(".guest-splash__card");
+    const image = document.getElementById("guest-splash-image");
+    const closeButton = document.getElementById("guest-splash-close");
+
+    if (!splash?.image || !splashNode || !card || !image || !closeButton) {
+      return;
+    }
+
+    const closeControls = splashNode.querySelectorAll("[data-splash-close]");
+    const title = fillTemplate(splash.title || "So glad you are here", replacements);
+    const caption = fillTemplate(splash.caption || "", replacements);
+    const kicker = fillTemplate(splash.kicker || "A favorite memory", replacements);
+    const alt = fillTemplate(splash.alt || title, replacements);
+    let closeTracked = false;
+    let splashShown = false;
+
+    card.style.setProperty("--splash-rotation", splash.rotation || "-2deg");
+    image.alt = alt;
+    setText("guest-splash-kicker", kicker);
+    setText("guest-splash-title", title);
+    setText("guest-splash-caption", caption);
+
+    function setupSplashDrag() {
+      let isDragging = false;
+      let startPointerX = 0;
+      let startPointerY = 0;
+      let startDragX = 0;
+      let startDragY = 0;
+      let currentDragX = 0;
+      let currentDragY = 0;
+      let trackedDrag = false;
+
+      function getDragLimit() {
+        return {
+          x: Math.min(110, Math.max(42, window.innerWidth * 0.09)),
+          y: Math.min(86, Math.max(34, window.innerHeight * 0.08))
+        };
+      }
+
+      function setDragPosition(x, y) {
+        const dragLimit = getDragLimit();
+        currentDragX = clampNumber(x, -dragLimit.x, dragLimit.x);
+        currentDragY = clampNumber(y, -dragLimit.y, dragLimit.y);
+
+        card.style.setProperty("--splash-drag-x", `${currentDragX.toFixed(1)}px`);
+        card.style.setProperty("--splash-drag-y", `${currentDragY.toFixed(1)}px`);
+        card.style.setProperty("--splash-drag-rotation", `${clampNumber(currentDragX / 34, -2.2, 2.2).toFixed(2)}deg`);
+      }
+
+      function finishDrag(event) {
+        if (!isDragging) {
+          return;
+        }
+
+        isDragging = false;
+        card.classList.remove("is-dragging");
+
+        if (card.releasePointerCapture && event?.pointerId !== undefined) {
+          card.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      card.addEventListener("pointerdown", (event) => {
+        if (event.button && event.button !== 0) {
+          return;
+        }
+
+        if (event.target.closest("[data-splash-close]")) {
+          return;
+        }
+
+        isDragging = true;
+        startPointerX = event.clientX;
+        startPointerY = event.clientY;
+        startDragX = currentDragX;
+        startDragY = currentDragY;
+        card.classList.add("is-dragging");
+
+        if (card.setPointerCapture) {
+          card.setPointerCapture(event.pointerId);
+        }
+
+        event.preventDefault();
+      });
+
+      card.addEventListener("pointermove", (event) => {
+        if (!isDragging) {
+          return;
+        }
+
+        const nextX = startDragX + event.clientX - startPointerX;
+        const nextY = startDragY + event.clientY - startPointerY;
+        setDragPosition(nextX, nextY);
+
+        if (!trackedDrag && Math.hypot(currentDragX - startDragX, currentDragY - startDragY) > 10) {
+          trackedDrag = true;
+          track("splash_drag", { splash_image: splash.image });
+        }
+      });
+
+      card.addEventListener("pointerup", finishDrag);
+      card.addEventListener("pointercancel", finishDrag);
+      window.addEventListener("resize", () => setDragPosition(currentDragX, currentDragY));
+    }
+
+    function closeSplash() {
+      if (splashNode.hidden) {
+        return;
+      }
+
+      splashNode.classList.remove("is-visible");
+      document.body.classList.remove("has-splash");
+
+      if (!closeTracked) {
+        closeTracked = true;
+        track("splash_close", { splash_image: splash.image });
+      }
+
+      window.setTimeout(() => {
+        splashNode.hidden = true;
+        splashNode.setAttribute("aria-hidden", "true");
+      }, 260);
+    }
+
+    function handleKeydown(event) {
+      if (event.key === "Escape") {
+        closeSplash();
+      }
+    }
+
+    function showSplash() {
+      if (splashShown) {
+        return;
+      }
+
+      splashShown = true;
+      splashNode.hidden = false;
+      splashNode.setAttribute("aria-hidden", "false");
+      document.body.classList.add("has-splash");
+
+      window.requestAnimationFrame(() => {
+        splashNode.classList.add("is-visible");
+        closeButton.focus({ preventScroll: true });
+      });
+
+      track("splash_view", { splash_image: splash.image });
+    }
+
+    closeControls.forEach((control) => {
+      control.addEventListener("click", closeSplash);
+    });
+
+    setupSplashDrag();
+    window.addEventListener("keydown", handleKeydown);
+    image.addEventListener("load", showSplash, { once: true });
+    image.src = splash.image;
+
+    if (image.complete && image.naturalWidth > 0) {
+      showSplash();
+    }
+  }
+
+  function setLocalizedContent(language) {
+    const text = content[language] || content.en || {};
+    const storyParagraphs = text.storyParagraphs || [];
+    const metaDescription = document.querySelector("meta[name='description']");
+
+    document.documentElement.lang = toLocale(language);
+
+    if (metaDescription && text.description) {
+      metaDescription.setAttribute("content", text.description);
+    }
+
+    setText("hero-eyebrow", text.heroEyebrow);
+    setText("scroll-cue-text", text.scrollCue);
+    setText("story-kicker", text.storyKicker);
+    setText("story-title", text.storyTitle);
+    setText("story-paragraph-1", storyParagraphs[0]);
+    setText("story-paragraph-2", storyParagraphs[1]);
+    setText("story-paragraph-3", storyParagraphs[2]);
+    setText("gratitude-kicker", text.gratitudeKicker);
+    setText("gratitude-title", text.gratitudeTitle);
+    setText("gratitude-copy", text.gratitudeCopy);
+
+    const scrollCue = document.getElementById("scroll-cue");
+    if (scrollCue && text.scrollCueLabel) {
+      scrollCue.setAttribute("aria-label", text.scrollCueLabel);
+    }
+  }
+
+  const route = getRouteFromUrl();
+  const language = route.language;
+  const slug = route.slug;
+  const key = toKey(slug);
+  const guestConfig = messages[key];
+  const hasSpecificMessage = Boolean(key && guestConfig);
+  const languageFallback = defaultMessages[language] || defaultMessages.en || {};
+  const guestName = hasSpecificMessage ? toGuestName(key) : toGuestName(slug);
+  const fallbackMessage = personalizeMessage(languageFallback, { guestName });
+  const guestMessage = getLocalizedGuestMessage(guestConfig, language);
+  const message = hasSpecificMessage
+    ? { ...fallbackMessage, ...personalizeMessage(guestMessage, { guestName }) }
+    : fallbackMessage;
+  const visitId = getVisitId();
+  const visitStartedAt = Date.now();
+
+  setLocalizedContent(language);
+  setText("greeting", message.greeting);
+  setText("message", message.message);
+  setText("signature", message.signature);
+
+  const pageTitle = (content[language] || content.en || {}).pageTitle || "Thank You";
+  if (key) {
+    document.title = `${message.greeting.replace(/,$/, "")} | ${pageTitle}`;
+  } else {
+    document.title = pageTitle;
+  }
+
+  function getVisitId() {
+    const keyName = "thankYouVisitId";
+    let existingId = "";
+
+    try {
+      existingId = window.sessionStorage.getItem(keyName);
+    } catch {
+      existingId = "";
+    }
+
+    if (existingId) {
+      return existingId;
+    }
+
+    const nextId = window.crypto?.randomUUID
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    try {
+      window.sessionStorage.setItem(keyName, nextId);
+    } catch {
+      // Some privacy modes can block sessionStorage; the random id still works for this page load.
+    }
+
+    return nextId;
+  }
+
+  function getGuestLabel() {
+    return (message.greeting || guestName)
+      .replace(/^dear\s+/i, "")
+      .replace(/,$/, "")
+      .trim();
+  }
+
+  function getNavigationTiming() {
+    const navigation = performance.getEntriesByType?.("navigation")?.[0];
+
+    if (!navigation) {
+      return {};
+    }
+
+    return {
+      load_ms: Math.round(navigation.loadEventEnd || navigation.duration || 0),
+      dom_ready_ms: Math.round(navigation.domContentLoadedEventEnd || 0),
+      transfer_bytes: Math.round(navigation.transferSize || 0)
+    };
+  }
+
+  function getLogPayload(eventName, extra = {}) {
+    return {
+      event: eventName,
+      visit_id: visitId,
+      guest_slug_raw: normalizeSlug(slug),
+      guest_key: key || "default",
+      guest_known: hasSpecificMessage,
+      guest_label: getGuestLabel(),
+      page_language: toLocale(language),
+      page_title: document.title,
+      url: window.location.href,
+      path: window.location.pathname,
+      query: window.location.search,
+      referrer: document.referrer || "",
+      language: navigator.language || "",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+      local_time: new Date().toString(),
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      screen: `${window.screen.width}x${window.screen.height}`,
+      device_pixel_ratio: window.devicePixelRatio || 1,
+      color_scheme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+      reduced_motion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      seconds_on_page: Math.round((Date.now() - visitStartedAt) / 1000),
+      ...getNavigationTiming(),
+      ...extra
+    };
+  }
+
+  function track(eventName, extra = {}, useBeacon = false) {
+    const payload = JSON.stringify(getLogPayload(eventName, extra));
+
+    if (useBeacon && navigator.sendBeacon) {
+      navigator.sendBeacon("/log.php", new Blob([payload], { type: "application/json" }));
+      return;
+    }
+
+    fetch("/log.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true
+    }).catch(() => {
+      // Logging is best-effort; the thank-you page should never break because of it.
+    });
+  }
+
+  setupGuestSplash(guestConfig, language, { guestName });
+
+  const story = document.getElementById("story");
+  const scrollCue = document.querySelector(".scroll-cue");
+  let trackedStoryView = false;
+
+  if (scrollCue && story) {
+    scrollCue.addEventListener("click", (event) => {
+      event.preventDefault();
+      track("story_click", { scroll_y: Math.round(window.scrollY) });
+      story.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  if (story && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            story.classList.add("is-visible");
+            if (!trackedStoryView) {
+              trackedStoryView = true;
+              track("story_view", {
+                intersection_ratio: Number(entry.intersectionRatio.toFixed(3)),
+                scroll_y: Math.round(window.scrollY)
+              });
+            }
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.28 }
+    );
+
+    observer.observe(story);
+  } else if (story) {
+    story.classList.add("is-visible");
+    trackedStoryView = true;
+    track("story_view", { fallback_observer: true });
+  }
+
+  function trackPageView() {
+    window.setTimeout(() => {
+      track("page_view");
+    }, 0);
+  }
+
+  if (document.readyState === "complete") {
+    trackPageView();
+  } else {
+    window.addEventListener("load", trackPageView);
+  }
+
+  window.addEventListener("pagehide", () => {
+    track("page_exit", { scroll_y: Math.round(window.scrollY) }, true);
+  });
+})();

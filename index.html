@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thank You</title>
+    <meta
+      name="description"
+      content="A personalized thank-you note demo."
+    >
+    <link rel="preload" href="/assets/rings-bible-bg.jpg" as="image">
+    <link rel="preload" href="/assets/story-figurines-bg.jpg" as="image">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="guest-splash" id="guest-splash" hidden aria-hidden="true">
+      <button class="guest-splash__backdrop" type="button" data-splash-close aria-label="Close photo"></button>
+      <figure class="guest-splash__card" role="dialog" aria-modal="true" aria-labelledby="guest-splash-title">
+        <button class="guest-splash__close" id="guest-splash-close" type="button" data-splash-close aria-label="Close photo">
+          &times;
+        </button>
+        <img id="guest-splash-image" src="" alt="">
+        <figcaption class="guest-splash__caption">
+          <span class="guest-splash__kicker" id="guest-splash-kicker">A favorite memory</span>
+          <strong id="guest-splash-title">So glad you are here</strong>
+          <span id="guest-splash-caption"></span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <main class="hero">
+      <div class="hero__content" aria-live="polite">
+        <p class="eyebrow" id="hero-eyebrow">Thank you for being here</p>
+        <h1 id="greeting">Dear friends,</h1>
+        <p id="message" class="message">
+          Thank you for being part of this day. Your kindness, encouragement,
+          and presence mean so much.
+        </p>
+        <p id="signature" class="signature">With gratitude, the hosts</p>
+      </div>
+      <a class="scroll-cue" id="scroll-cue" href="#story" aria-label="Read the next section">
+        <span id="scroll-cue-text">Read more</span>
+        <span class="scroll-cue__mark" aria-hidden="true"></span>
+      </a>
+    </main>
+
+    <section class="story" id="story" aria-labelledby="story-title">
+      <div class="story__inner">
+        <p class="section-kicker" id="story-kicker">A note</p>
+        <h2 id="story-title">A simple thank-you</h2>
+        <div class="story__copy">
+          <p id="story-paragraph-1">
+            This demo keeps the public version generic while showing how
+            personalized routes can work.
+          </p>
+          <p id="story-paragraph-2">
+            Use the guest configuration and CSV file to add private names,
+            photos, and messages in your own copy.
+          </p>
+          <p id="story-paragraph-3">
+            The same page can serve English and Brazilian Portuguese routes
+            without needing separate templates.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="gratitude" aria-labelledby="gratitude-title">
+      <div class="gratitude__inner">
+        <p class="section-kicker" id="gratitude-kicker">With gratitude</p>
+        <h2 id="gratitude-title">Thank you for being part of the story.</h2>
+        <p id="gratitude-copy">
+          For showing up, cheering us on, sending love from afar, and making
+          this season feel full of support.
+        </p>
+      </div>
+    </section>
+
+    <script src="/guests.js"></script>
+    <script src="/script.js"></script>
+  </body>
+</html>
