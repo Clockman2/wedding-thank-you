@@ -465,6 +465,9 @@ body.has-splash {
   --splash-drag-x: 0px;
   --splash-drag-y: 0px;
   --splash-drag-rotation: 0deg;
+  --splash-card-ink: #12211d;
+  --splash-card-muted: #53635c;
+  --splash-card-accent: #d96876;
   position: relative;
   z-index: 1;
   width: min(980px, calc(100vw - 36px));
@@ -478,7 +481,8 @@ body.has-splash {
   box-shadow:
     0 34px 110px rgba(0, 0, 0, 0.52),
     0 10px 30px rgba(0, 0, 0, 0.22);
-  color: var(--ink);
+  color: var(--splash-card-ink);
+  color-scheme: light;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -523,6 +527,9 @@ body.has-splash {
   max-height: min(66svh, 620px);
   border-radius: 5px;
   background: #0b1110;
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
   object-fit: contain;
   pointer-events: none;
   -webkit-user-drag: none;
@@ -550,7 +557,8 @@ body.has-splash {
 
 .guest-splash__close:hover,
 .guest-splash__close:focus-visible {
-  background: var(--ink);
+  background: #12211d;
+  color: #fff7e7;
 }
 
 .guest-splash__close:focus-visible {
@@ -565,7 +573,7 @@ body.has-splash {
 }
 
 .guest-splash__kicker {
-  color: var(--berry);
+  color: var(--splash-card-accent);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -573,6 +581,7 @@ body.has-splash {
 }
 
 .guest-splash__caption strong {
+  color: var(--splash-card-ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.35rem, 2.5vw, 2.2rem);
   font-weight: 500;
@@ -580,7 +589,7 @@ body.has-splash {
 }
 
 .guest-splash__caption span:last-child {
-  color: var(--soft-ink);
+  color: var(--splash-card-muted);
   font-size: clamp(0.95rem, 1.3vw, 1.08rem);
   line-height: 1.45;
 }
