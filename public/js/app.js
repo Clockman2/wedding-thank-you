@@ -101,6 +101,24 @@
     }
   }
 
+  function createFunPiece(className, styles = {}, text = "") {
+    const piece = document.createElement("span");
+    piece.className = className;
+    piece.textContent = text;
+
+    Object.entries(styles).forEach(([property, value]) => {
+      piece.style.setProperty(property, value);
+    });
+
+    return piece;
+  }
+
+  function removeFunPiece(piece, fallbackMs) {
+    const remove = () => piece.remove();
+    piece.addEventListener("animationend", remove, { once: true });
+    window.setTimeout(remove, fallbackMs);
+  }
+
   function fillFunLayer() {
     const layer = document.getElementById("fun-layer");
 
@@ -111,17 +129,50 @@
     const marks = ["+", "*", ".", "x"];
 
     for (let index = 0; index < 34; index += 1) {
-      const mark = document.createElement("span");
       const size = 7 + (index % 5) * 2;
-      mark.className = "fun-sparkle";
-      mark.textContent = marks[index % marks.length];
-      mark.style.setProperty("--x", `${(index * 29) % 100}%`);
-      mark.style.setProperty("--y", `${(index * 47) % 100}%`);
-      mark.style.setProperty("--size", `${size}px`);
-      mark.style.setProperty("--delay", `${(index % 12) * -0.42}s`);
-      mark.style.setProperty("--duration", `${5.4 + (index % 7) * 0.45}s`);
-      mark.style.setProperty("--drift", `${index % 2 === 0 ? 1 : -1}`);
+      const mark = createFunPiece(
+        "fun-sparkle",
+        {
+          "--x": `${(index * 29) % 100}%`,
+          "--y": `${(index * 47) % 100}%`,
+          "--size": `${size}px`,
+          "--font-size": `${(size * 1.8).toFixed(1)}px`,
+          "--delay": `${(index % 12) * -0.42}s`,
+          "--duration": `${5.4 + (index % 7) * 0.45}s`,
+          "--drift-distance": `${index % 2 === 0 ? 46 : -46}px`
+        },
+        marks[index % marks.length]
+      );
       layer.append(mark);
+    }
+
+    const colors = ["var(--gold)", "var(--teal)", "var(--berry)", "var(--cream)"];
+
+    for (let index = 0; index < 28; index += 1) {
+      const width = 6 + (index % 4) * 2;
+      const confetti = createFunPiece("fun-confetti", {
+        "--x": `${(index * 17 + 4) % 100}%`,
+        "--piece-color": colors[index % colors.length],
+        "--delay": `${(index % 14) * -0.36}s`,
+        "--duration": `${4.8 + (index % 6) * 0.52}s`,
+        "--width": `${width}px`,
+        "--height": `${(width * 2.25).toFixed(1)}px`,
+        "--spin-deg": `${index % 2 === 0 ? 520 : -520}deg`,
+        "--sway-distance": `${index % 3 === 0 ? 64 : -42}px`
+      });
+      layer.append(confetti);
+    }
+
+    for (let index = 0; index < 9; index += 1) {
+      const ribbon = createFunPiece("fun-ribbon", {
+        "--x": `${(index * 13 + 8) % 100}%`,
+        "--delay": `${index * -0.7}s`,
+        "--duration": `${7.5 + (index % 4) * 0.8}s`,
+        "--height": `${110 + (index % 3) * 42}px`,
+        "--piece-color": colors[(index + 1) % colors.length],
+        "--sway-distance": `${index % 2 === 0 ? 54 : -54}px`
+      });
+      layer.append(ribbon);
     }
   }
 
@@ -142,6 +193,67 @@
 
   function setupFunPointer() {
     let frame = 0;
+    let lastTrailAt = 0;
+
+    function isQuietTarget(target) {
+      return target instanceof Element && target.closest(".site-controls, .guest-splash, a, button, input, label");
+    }
+
+    function spawnFunTrail(x, y) {
+      const layer = document.getElementById("fun-layer");
+
+      if (!layer || layer.hidden || getMotionMode() !== "fun") {
+        return;
+      }
+
+      const marks = [".", "+", "*"];
+      const trailSize = 8 + Math.random() * 10;
+      const trail = createFunPiece(
+        "fun-trail",
+        {
+          "--trail-x": `${x}px`,
+          "--trail-y": `${y}px`,
+          "--trail-size": `${trailSize.toFixed(1)}px`,
+          "--trail-font-size": `${(trailSize * 1.35).toFixed(1)}px`,
+          "--trail-rotate": `${Math.random() * 110 - 55}deg`
+        },
+        marks[Math.floor(Math.random() * marks.length)]
+      );
+
+      layer.append(trail);
+      removeFunPiece(trail, 900);
+    }
+
+    function spawnFunBurst(x, y) {
+      const layer = document.getElementById("fun-layer");
+
+      if (!layer || layer.hidden || getMotionMode() !== "fun") {
+        return;
+      }
+
+      const marks = ["+", "*", "x", "."];
+
+      for (let index = 0; index < 14; index += 1) {
+        const angle = (360 / 14) * index + Math.random() * 18;
+        const burstSize = 10 + Math.random() * 8;
+        const burst = createFunPiece(
+          "fun-burst",
+          {
+            "--burst-x": `${x}px`,
+            "--burst-y": `${y}px`,
+            "--burst-angle": `${angle}deg`,
+            "--burst-distance": `${42 + Math.random() * 70}px`,
+            "--burst-delay": `${index * 0.012}s`,
+            "--burst-size": `${burstSize.toFixed(1)}px`,
+            "--burst-font-size": `${(burstSize * 1.35).toFixed(1)}px`
+          },
+          marks[index % marks.length]
+        );
+
+        layer.append(burst);
+        removeFunPiece(burst, 1100);
+      }
+    }
 
     window.addEventListener("pointermove", (event) => {
       if (getMotionMode() !== "fun") {
@@ -159,7 +271,27 @@
         document.documentElement.style.setProperty("--pointer-y", `${(y * 100).toFixed(1)}%`);
         document.documentElement.style.setProperty("--tilt-x", (x - 0.5).toFixed(3));
         document.documentElement.style.setProperty("--tilt-y", (y - 0.5).toFixed(3));
+        document.documentElement.style.setProperty("--tilt-shift-x", `${((x - 0.5) * -18).toFixed(2)}px`);
+        document.documentElement.style.setProperty("--tilt-shift-y", `${((y - 0.5) * -12).toFixed(2)}px`);
         frame = 0;
+      });
+
+      const now = performance.now();
+      if (now - lastTrailAt > 80 && !isQuietTarget(event.target)) {
+        lastTrailAt = now;
+        spawnFunTrail(event.clientX, event.clientY);
+      }
+    });
+
+    window.addEventListener("click", (event) => {
+      if (getMotionMode() !== "fun" || isQuietTarget(event.target)) {
+        return;
+      }
+
+      spawnFunBurst(event.clientX, event.clientY);
+      track("super_fun_burst", {
+        pointer_x: Math.round(event.clientX),
+        pointer_y: Math.round(event.clientY)
       });
     });
   }
