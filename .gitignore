@@ -9,4 +9,11 @@ __pycache__/
 *.py[cod]
 
 public/logs/*.txt
+public/logs/*.jsonl
 !public/logs/.htaccess
+
+public/uploads/guest-photos/*
+!public/uploads/guest-photos/.gitkeep
+
+public/uploads/pending-photos/*
+!public/uploads/pending-photos/.gitkeep

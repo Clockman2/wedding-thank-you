@@ -3,6 +3,10 @@
   const messages = site.guests || {};
   const defaultMessages = site.defaultMessages || { en: site.defaultMessage || {} };
   const content = site.content || {};
+  let approvedSharedPhotos = [];
+  let transientGalleryPhotos = [];
+  let galleryCycleStart = 0;
+  let galleryCycleTimer = 0;
 
   function getRouteFromUrl() {
     const pathParts = window.location.pathname
@@ -101,6 +105,14 @@
     }
   }
 
+  function randomItem(items, fallback = null) {
+    if (!items?.length) {
+      return fallback;
+    }
+
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
   function createFunPiece(className, styles = {}, text = "") {
     const piece = document.createElement("span");
     piece.className = className;
@@ -191,6 +203,85 @@
     }
   }
 
+  function makeFunLayerAvailable(temporary = false) {
+    const layer = document.getElementById("fun-layer");
+
+    if (!layer || getMotionMode() === "off") {
+      return null;
+    }
+
+    fillFunLayer();
+    layer.hidden = false;
+
+    if (temporary && getMotionMode() !== "fun") {
+      window.setTimeout(() => {
+        if (getMotionMode() !== "fun") {
+          layer.hidden = true;
+        }
+      }, 1800);
+    }
+
+    return layer;
+  }
+
+  function spawnFunBurst(x, y, options = {}) {
+    const layer = makeFunLayerAvailable(Boolean(options.temporary));
+
+    if (!layer) {
+      return;
+    }
+
+    const marks = options.marks || ["+", "*", "x", "."];
+    const count = options.count || 14;
+
+    for (let index = 0; index < count; index += 1) {
+      const angle = (360 / count) * index + Math.random() * 18;
+      const burstSize = 10 + Math.random() * 8;
+      const burst = createFunPiece(
+        "fun-burst",
+        {
+          "--burst-x": `${x}px`,
+          "--burst-y": `${y}px`,
+          "--burst-angle": `${angle}deg`,
+          "--burst-distance": `${42 + Math.random() * (options.distance || 70)}px`,
+          "--burst-delay": `${index * 0.012}s`,
+          "--burst-size": `${burstSize.toFixed(1)}px`,
+          "--burst-font-size": `${(burstSize * 1.35).toFixed(1)}px`
+        },
+        marks[index % marks.length]
+      );
+
+      layer.append(burst);
+      removeFunPiece(burst, 1100);
+    }
+  }
+
+  function launchConfetti(options = {}) {
+    if (getMotionMode() === "off") {
+      return;
+    }
+
+    const burstCount = options.burstCount || 5;
+    const marks = options.marks || ["+", "*", "x", "."];
+
+    for (let index = 0; index < burstCount; index += 1) {
+      const x = options.fullScreen
+        ? window.innerWidth * (0.04 + Math.random() * 0.92)
+        : window.innerWidth * (0.16 + Math.random() * 0.68);
+      const y = options.fullScreen
+        ? window.innerHeight * (0.06 + Math.random() * 0.84)
+        : window.innerHeight * (0.18 + Math.random() * 0.46);
+      window.setTimeout(() => {
+        spawnFunBurst(x, y, {
+          count: options.count || 18,
+          distance: options.distance || 92,
+          marks,
+          temporary: true
+        });
+      }, index * 110);
+    }
+  }
+
   function setupFunPointer() {
     let frame = 0;
     let lastTrailAt = 0;
@@ -222,37 +313,6 @@
 
       layer.append(trail);
       removeFunPiece(trail, 900);
-    }
-
-    function spawnFunBurst(x, y) {
-      const layer = document.getElementById("fun-layer");
-
-      if (!layer || layer.hidden || getMotionMode() !== "fun") {
-        return;
-      }
-
-      const marks = ["+", "*", "x", "."];
-
-      for (let index = 0; index < 14; index += 1) {
-        const angle = (360 / 14) * index + Math.random() * 18;
-        const burstSize = 10 + Math.random() * 8;
-        const burst = createFunPiece(
-          "fun-burst",
-          {
-            "--burst-x": `${x}px`,
-            "--burst-y": `${y}px`,
-            "--burst-angle": `${angle}deg`,
-            "--burst-distance": `${42 + Math.random() * 70}px`,
-            "--burst-delay": `${index * 0.012}s`,
-            "--burst-size": `${burstSize.toFixed(1)}px`,
-            "--burst-font-size": `${(burstSize * 1.35).toFixed(1)}px`
-          },
-          marks[index % marks.length]
-        );
-
-        layer.append(burst);
-        removeFunPiece(burst, 1100);
-      }
     }
 
     window.addEventListener("pointermove", (event) => {
@@ -301,7 +361,9 @@
     const themeToggle = document.getElementById("theme-toggle");
     const themeText = document.getElementById("theme-toggle-text");
     const motionControl = document.getElementById("motion-control");
+    const vibeButtons = Array.from(document.querySelectorAll("[data-vibe-option]"));
     const motionValues = ["off", "default", "fun"];
+    const vibeValues = ["classic", "brazil", "new-mexico"];
     const motionLabels = {
       off: "No motion",
       default: "Default motion",
@@ -329,8 +391,20 @@
       }
     }
 
+    function setVibe(vibe, playMedia = false) {
+      const safeVibe = vibeValues.includes(vibe) ? vibe : "classic";
+      root.dataset.vibe = safeVibe;
+      vibeButtons.forEach((button) => {
+        const isActive = button.dataset.vibeOption === safeVibe;
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+      updateVibePhrase(safeVibe);
+      applyVibeMedia(safeVibe, playMedia);
+    }
+
     setTheme(root.dataset.theme === "dark" ? "dark" : "light");
     setMotion(root.dataset.motion || "default");
+    setVibe(root.dataset.vibe || "classic");
     setupFunPointer();
 
     themeToggle?.addEventListener("click", () => {
@@ -346,6 +420,21 @@
       savePreference("thankYouMotion", nextMotion);
       track("preference_change", { preference: "motion", value: nextMotion });
     });
+
+    vibeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextVibe = button.dataset.vibeOption || "classic";
+        setVibe(nextVibe, true);
+        savePreference("thankYouVibe", nextVibe);
+        if (nextVibe !== "classic") {
+          launchConfetti({
+            burstCount: nextVibe === "brazil" ? 4 : 3,
+            marks: nextVibe === "brazil" ? ["BR", "+", "*", "."] : ["NM", "+", "*", "."]
+          });
+        }
+        track("preference_change", { preference: "vibe", value: nextVibe });
+      });
+    });
   }
 
   function personalizeMessage(message = {}, replacements) {
@@ -360,7 +449,7 @@
 
   function setText(id, text) {
     const node = document.getElementById(id);
-    if (node && text) {
+    if (node && text !== undefined && text !== null) {
       node.textContent = text;
     }
   }
@@ -385,6 +474,64 @@
     return language === "pt" ? "pt-BR" : "en";
   }
 
+  function getLocalizedValue(value, language, fallback = "") {
+    if (!value) {
+      return fallback;
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return value[language] || value.en || fallback;
+  }
+
+  function updateVibePhrase(vibe) {
+    const phrase = getLocalizedValue(site.vibePhrases?.[vibe], language, "");
+    setText("vibe-phrase", phrase);
+  }
+
+  function applyVibeMedia(vibe, playAudio = false) {
+    const media = site.vibeMedia?.[vibe];
+    const audio = document.getElementById("vibe-audio");
+    const root = document.documentElement;
+
+    root.style.removeProperty("--vibe-bg-image");
+
+    if (audio && audio.dataset.currentVibe !== vibe) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.dataset.currentVibe = vibe;
+    }
+
+    if (!media) {
+      return;
+    }
+
+    const background = randomItem(media.backgrounds);
+    if (background) {
+      const probe = new Image();
+      probe.addEventListener("load", () => {
+        root.style.setProperty("--vibe-bg-image", `url("${background}")`);
+      }, { once: true });
+      probe.src = background;
+    }
+
+    if (audio && media.audio) {
+      if (audio.getAttribute("src") !== media.audio) {
+        audio.src = media.audio;
+        audio.loop = true;
+        audio.volume = 0.32;
+      }
+
+      if (playAudio) {
+        audio.play().catch(() => {
+          showPanicNote("Add a music file for this mode, then click the mode again.");
+        });
+      }
+    }
+  }
+
   function getLocalizedSplash(guestConfig, language) {
     if (!guestConfig?.splash) {
       return null;
@@ -401,7 +548,17 @@
   }
 
   function setupGuestSplash(guestConfig, language, replacements) {
-    const splash = getLocalizedSplash(guestConfig, language);
+    const configuredSplash = getLocalizedSplash(guestConfig, language);
+    const fallbackText = site.fallbackSplash?.[language] || site.fallbackSplash?.en || {};
+    const fallbackPhoto = !configuredSplash && key && !guestConfig ? randomItem(site.gallery || []) : null;
+    const splash = configuredSplash || (fallbackPhoto ? {
+      image: fallbackPhoto.src,
+      rotation: fallbackPhoto.rotation || "-1.4deg",
+      kicker: fallbackText.kicker || "A little memory",
+      title: fallbackText.title || "Glad you are here, {guestName}",
+      caption: fallbackText.caption || "",
+      alt: fallbackText.alt || "A shared wedding gallery photo"
+    } : null);
     const splashNode = document.getElementById("guest-splash");
     const card = splashNode?.querySelector(".guest-splash__card");
     const image = document.getElementById("guest-splash-image");
@@ -583,9 +740,34 @@
     setText("story-paragraph-1", storyParagraphs[0]);
     setText("story-paragraph-2", storyParagraphs[1]);
     setText("story-paragraph-3", storyParagraphs[2]);
+    setText("celebration-kicker", text.celebrationKicker);
+    setText("celebration-title", text.celebrationTitle);
+    setText("celebration-copy", text.celebrationCopy);
+    setText("envelope-title", text.envelopeTitle);
+    setText("envelope-copy", text.envelopeCopyClosed);
+    setText("confetti-button", text.confettiButton);
+    setText("do-not-press", text.doNotPress);
+    setText("gallery-kicker", text.galleryKicker);
+    setText("gallery-title", text.galleryTitle);
+    setText("guestbook-kicker", text.guestbookKicker);
+    setText("guestbook-title", text.guestbookTitle);
+    setText("guestbook-name-label", text.guestbookNameLabel);
+    setText("guestbook-message-label", text.guestbookMessageLabel);
+    setText("guestbook-submit", text.guestbookSubmit);
+    setText("photo-upload-kicker", text.photoUploadKicker);
+    setText("photo-upload-title", text.photoUploadTitle);
+    setText("photo-upload-copy", text.photoUploadCopy);
+    setText("photo-upload-name-label", text.photoUploadNameLabel);
+    setText("photo-upload-file-label", text.photoUploadFileLabel);
+    setText("photo-upload-submit", text.photoUploadSubmit);
     setText("gratitude-kicker", text.gratitudeKicker);
     setText("gratitude-title", text.gratitudeTitle);
     setText("gratitude-copy", text.gratitudeCopy);
+
+    const signature = document.getElementById("animated-signature");
+    if (signature && text.closingSignature) {
+      signature.dataset.signature = text.closingSignature;
+    }
 
     const scrollCue = document.getElementById("scroll-cue");
     if (scrollCue && text.scrollCueLabel) {
@@ -715,8 +897,497 @@
     });
   }
 
+  function getPageText() {
+    return content[language] || content.en || {};
+  }
+
+  function setupLoadingExperience() {
+    const loader = document.getElementById("site-loader");
+    const messageNode = document.getElementById("loading-message");
+    const messages = site.loadingMessages?.length
+      ? site.loadingMessages
+      : ["Loading happy tears...", "Importing wedding cake..."];
+    let messageIndex = Math.max(0, messages.indexOf(randomItem(messages, messages[0])));
+
+    if (!loader || !messageNode) {
+      document.body.classList.add("is-ready");
+      return;
+    }
+
+    messageNode.textContent = messages[messageIndex] || messages[0];
+
+    const rotateMessages = window.setInterval(() => {
+      messageIndex = (messageIndex + 1) % messages.length;
+      messageNode.textContent = messages[messageIndex];
+    }, 760);
+
+    function finishLoading() {
+      window.clearInterval(rotateMessages);
+      document.body.classList.add("is-ready");
+      window.setTimeout(() => {
+        loader.hidden = true;
+      }, shouldUseMotion() ? 900 : 80);
+    }
+
+    if (document.readyState === "complete") {
+      window.setTimeout(finishLoading, shouldUseMotion() ? 650 : 0);
+    } else {
+      window.addEventListener("load", () => {
+        window.setTimeout(finishLoading, shouldUseMotion() ? 650 : 0);
+      }, { once: true });
+    }
+  }
+
+  function setupMarriedCounter() {
+    const counter = document.getElementById("married-counter");
+    const weddingDate = new Date(`${site.weddingDate || "2026-01-01"}T00:00:00`);
+    const text = getPageText();
+
+    if (!counter || Number.isNaN(weddingDate.getTime())) {
+      return;
+    }
+
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfWedding = new Date(weddingDate.getFullYear(), weddingDate.getMonth(), weddingDate.getDate());
+    const days = Math.max(0, Math.floor((startOfToday - startOfWedding) / 86400000));
+    const unit = days === 1 ? text.marriedCounterOne : text.marriedCounterMany;
+    counter.textContent = `${text.marriedCounterPrefix || "We've been married for"} ${days.toLocaleString(toLocale(language))} ${unit || "days."}`;
+  }
+
+  function createPolaroidCard(photo, index) {
+    const figure = document.createElement("figure");
+    const image = document.createElement("img");
+    const caption = document.createElement("figcaption");
+    const rotation = photo.rotation || `${index % 2 === 0 ? -1.5 : 1.5}deg`;
+    const rotationNumber = Number.parseFloat(rotation) || 0;
+
+    figure.className = "polaroid-card";
+    figure.style.setProperty("--polaroid-rotation", rotation);
+    figure.style.setProperty("--polaroid-counter-rotation", `${(rotationNumber * -0.6).toFixed(2)}deg`);
+    figure.style.setProperty("--polaroid-index", String(index));
+    figure.style.setProperty("--polaroid-delay", `${index * 120}ms`);
+    image.src = photo.src;
+    image.alt = getLocalizedValue(photo.alt, language, getLocalizedValue(photo.caption, language, "Wedding photo"));
+    image.loading = "lazy";
+    caption.textContent = getLocalizedValue(photo.caption, language, "A favorite moment");
+
+    figure.append(image, caption);
+    return figure;
+  }
+
+  function renderGallery(extraPhotos) {
+    const gallery = document.getElementById("wedding-gallery");
+
+    if (!gallery) {
+      return;
+    }
+
+    if (Array.isArray(extraPhotos)) {
+      transientGalleryPhotos = extraPhotos;
+    }
+
+    const approvedPhotos = approvedSharedPhotos.length ? approvedSharedPhotos : (site.gallery || []);
+    const photos = [...approvedPhotos, ...transientGalleryPhotos];
+
+    if (!photos.length) {
+      gallery.replaceChildren();
+      return;
+    }
+
+    const visibleCount = Math.min(6, photos.length);
+    const safeStart = galleryCycleStart % photos.length;
+    const orderedPhotos = [...photos.slice(safeStart), ...photos.slice(0, safeStart)].slice(0, visibleCount);
+    gallery.replaceChildren(...orderedPhotos.map(createPolaroidCard));
+  }
+
+  function setupGalleryCycle() {
+    const photos = approvedSharedPhotos.length ? approvedSharedPhotos : (site.gallery || []);
+
+    if (galleryCycleTimer || photos.length < 2) {
+      return;
+    }
+
+    galleryCycleTimer = window.setInterval(() => {
+      if (!shouldUseMotion()) {
+        return;
+      }
+
+      galleryCycleStart = (galleryCycleStart + 1) % photos.length;
+      renderGallery();
+    }, 4800);
+  }
+
+  async function loadUploadedPhotos() {
+    try {
+      const response = await fetch("/gallery.php", { headers: { Accept: "application/json" } });
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      if (!data.ok || !Array.isArray(data.photos)) {
+        return [];
+      }
+
+      return data.photos.map((photo) => ({
+        src: photo.url || photo.src,
+        rotation: photo.rotation || `${Math.random() > 0.5 ? 1.8 : -1.8}deg`,
+        caption: photo.caption || {
+          en: photo.name ? `Shared by ${photo.name}` : "Shared by a guest",
+          pt: photo.name ? `Enviada por ${photo.name}` : "Enviada por um convidado"
+        }
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  function setupEnvelope() {
+    const button = document.getElementById("envelope-button");
+    const copy = document.getElementById("envelope-copy");
+    const text = getPageText();
+
+    button?.addEventListener("click", () => {
+      button.classList.add("is-open");
+      button.setAttribute("aria-expanded", "true");
+      if (copy) {
+        copy.textContent = text.envelopeCopyOpen || text.envelopeCopyClosed;
+      }
+      openSweetNote();
+      launchConfetti({ burstCount: 2, count: 12 });
+      track("envelope_open");
+    });
+  }
+
+  function showPanicNote(message) {
+    const panicNote = document.getElementById("panic-note");
+
+    if (!panicNote) {
+      return;
+    }
+
+    panicNote.textContent = message;
+    panicNote.hidden = false;
+
+    window.setTimeout(() => {
+      panicNote.hidden = true;
+    }, 4200);
+  }
+
+  function openSweetNote() {
+    const modal = document.getElementById("note-modal");
+    const message = document.getElementById("note-modal-message");
+    const closeButton = modal?.querySelector("[data-note-close]");
+    const notes = site.sweetNotes?.[language] || site.sweetNotes?.en || [];
+
+    if (!modal || !message) {
+      return;
+    }
+
+    message.textContent = randomItem(notes, getPageText().envelopeCopyOpen || "Thank you for being part of this.");
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+
+    window.requestAnimationFrame(() => {
+      modal.classList.add("is-visible");
+      closeButton?.focus({ preventScroll: true });
+    });
+  }
+
+  function closeSweetNote() {
+    const modal = document.getElementById("note-modal");
+
+    if (!modal || modal.hidden) {
+      return;
+    }
+
+    modal.classList.remove("is-visible");
+    modal.setAttribute("aria-hidden", "true");
+    window.setTimeout(() => {
+      modal.hidden = true;
+    }, 220);
+  }
+
+  function setupSweetNoteModal() {
+    document.querySelectorAll("[data-note-close]").forEach((control) => {
+      control.addEventListener("click", closeSweetNote);
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeSweetNote();
+      }
+    });
+  }
+
+  function setupCelebrationActions() {
+    const text = getPageText();
+    const confettiButton = document.getElementById("confetti-button");
+    const doNotPress = document.getElementById("do-not-press");
+
+    confettiButton?.addEventListener("click", () => {
+      launchConfetti({
+        burstCount: 34,
+        count: 34,
+        distance: 185,
+        fullScreen: true,
+        marks: ["+", "*", "x", ".", "!!"]
+      });
+      track("confetti_button");
+    });
+
+    doNotPress?.addEventListener("click", () => {
+      doNotPress.textContent = text.doNotPressAfter || "Too late.";
+      document.body.classList.add("is-mischief");
+      launchConfetti({ burstCount: 12, count: 20, distance: 130, marks: ["!", "?", "+", "*"] });
+      showPanicNote(text.panicNote || "Opening something extremely serious.");
+      window.open(site.rickRollUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "_blank", "noopener,noreferrer");
+      track("do_not_press");
+
+      window.setTimeout(() => {
+        document.body.classList.remove("is-mischief");
+      }, 4200);
+    });
+  }
+
+  function renderGuestbookEntries(entries) {
+    const wall = document.getElementById("guestbook-wall");
+    const text = getPageText();
+
+    if (!wall) {
+      return;
+    }
+
+    if (!entries.length) {
+      const empty = document.createElement("p");
+      empty.className = "guestbook-empty";
+      empty.textContent = text.guestbookEmpty || "No notes yet.";
+      wall.replaceChildren(empty);
+      return;
+    }
+
+    const cards = entries.slice(0, 12).map((entry, index) => {
+      const article = document.createElement("article");
+      const quote = document.createElement("p");
+      const name = document.createElement("span");
+
+      article.className = "guestbook-note";
+      article.style.setProperty("--note-rotation", `${index % 2 === 0 ? -0.8 : 0.8}deg`);
+      quote.textContent = entry.message || "";
+      name.textContent = entry.name || "Guest";
+
+      article.append(quote, name);
+      return article;
+    });
+
+    wall.replaceChildren(...cards);
+  }
+
+  async function fetchGuestbookEntries() {
+    const text = getPageText();
+    setText("guestbook-status", text.guestbookLoading);
+
+    try {
+      const response = await fetch("/guestbook.php", { headers: { Accept: "application/json" } });
+      const data = await response.json();
+      const entries = data.ok && Array.isArray(data.entries) ? data.entries : [];
+      renderGuestbookEntries(entries);
+      setText("guestbook-status", "");
+    } catch {
+      renderGuestbookEntries([]);
+      setText("guestbook-status", "");
+    }
+  }
+
+  function setupGuestbook() {
+    const form = document.getElementById("guestbook-form");
+    const text = getPageText();
+
+    fetchGuestbookEntries();
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+      const payload = {
+        name: String(formData.get("name") || "").trim(),
+        message: String(formData.get("message") || "").trim(),
+        guest_key: key || "default",
+        language: toLocale(language)
+      };
+
+      if (!payload.name || !payload.message) {
+        return;
+      }
+
+      try {
+        const response = await fetch("/guestbook.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error("Guestbook request failed");
+        }
+
+        form.reset();
+        setText("guestbook-status", text.guestbookSuccess);
+        renderGuestbookEntries(data.entries || [payload]);
+        launchConfetti({ burstCount: 2, count: 12 });
+        track("guestbook_submit");
+      } catch {
+        setText("guestbook-status", text.guestbookError);
+      }
+    });
+  }
+
+  function setupPhotoUpload() {
+    const form = document.getElementById("photo-upload-form");
+    const fileInput = document.getElementById("photo-upload-file");
+    const fileLabel = document.getElementById("photo-upload-file-label");
+    const text = getPageText();
+    let previewUrl = "";
+
+    fileInput?.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        setText("photo-upload-file-label", text.photoUploadFileLabel);
+        return;
+      }
+
+      setText("photo-upload-file-label", file.name);
+      setText("photo-upload-status", text.photoUploadReady);
+
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      previewUrl = URL.createObjectURL(file);
+      renderGallery([{
+        src: previewUrl,
+        rotation: "-2deg",
+        caption: {
+          en: "Preview from your upload",
+          pt: "Prévia do seu envio"
+        }
+      }]);
+    });
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+      formData.set("guest_key", key || "default");
+      formData.set("language", toLocale(language));
+
+      try {
+        const response = await fetch("/upload-photo.php", {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error("Upload failed");
+        }
+
+        setText("photo-upload-status", text.photoUploadSuccess);
+        if (fileLabel) {
+          fileLabel.textContent = text.photoUploadFileLabel;
+        }
+        form.reset();
+        transientGalleryPhotos = [];
+        renderGallery();
+        launchConfetti({ burstCount: 3, count: 12 });
+        track("photo_upload", { upload_name: data.file || "" });
+      } catch {
+        setText("photo-upload-status", text.photoUploadError);
+      }
+    });
+  }
+
+  function setupAnimatedSignature() {
+    const signature = document.getElementById("animated-signature");
+
+    if (!signature) {
+      return;
+    }
+
+    const fullText = signature.dataset.signature || "";
+    let hasWritten = false;
+
+    function writeSignature() {
+      if (hasWritten) {
+        return;
+      }
+
+      hasWritten = true;
+
+      if (!shouldUseMotion()) {
+        signature.textContent = fullText;
+        return;
+      }
+
+      signature.textContent = "";
+      [...fullText].forEach((letter, index) => {
+        window.setTimeout(() => {
+          signature.textContent += letter;
+        }, index * 42);
+      });
+    }
+
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            writeSignature();
+            observer.disconnect();
+          }
+        });
+      }, { threshold: 0.45 });
+      observer.observe(signature);
+    } else {
+      writeSignature();
+    }
+  }
+
+  function setupSectionReveals() {
+    const sections = document.querySelectorAll(".celebration, .gallery, .guestbook, .photo-upload, .gratitude, .closing-signature");
+
+    if (!("IntersectionObserver" in window)) {
+      sections.forEach((section) => section.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.18 });
+
+    sections.forEach((section) => observer.observe(section));
+  }
+
   setupDisplayPreferences();
   setupGuestSplash(guestConfig, language, { guestName });
+  setupLoadingExperience();
+  setupMarriedCounter();
+  renderGallery();
+  loadUploadedPhotos().then((photos) => {
+    approvedSharedPhotos = photos;
+    renderGallery();
+    setupGalleryCycle();
+  });
+  setupEnvelope();
+  setupSweetNoteModal();
+  setupCelebrationActions();
+  setupGuestbook();
+  setupPhotoUpload();
+  setupAnimatedSignature();
+  setupSectionReveals();
 
   const story = document.getElementById("story");
   const scrollCue = document.querySelector(".scroll-cue");

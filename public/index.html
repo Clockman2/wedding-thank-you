@@ -16,24 +16,36 @@
         const root = document.documentElement;
         let storedTheme = "";
         let storedMotion = "";
+        let storedVibe = "";
 
         try {
           storedTheme = window.localStorage.getItem("thankYouTheme") || "";
           storedMotion = window.localStorage.getItem("thankYouMotion") || "";
+          storedVibe = window.localStorage.getItem("thankYouVibe") || "";
         } catch {
           storedTheme = "";
           storedMotion = "";
+          storedVibe = "";
         }
 
         const systemTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
         root.dataset.theme = storedTheme || systemTheme;
         root.dataset.motion = storedMotion || (reducedMotion ? "off" : "default");
+        root.dataset.vibe = ["classic", "brazil", "new-mexico"].includes(storedVibe) ? storedVibe : "classic";
       })();
     </script>
     <link rel="stylesheet" href="/css/styles.css">
   </head>
   <body>
+    <div class="site-loader" id="site-loader" aria-live="polite">
+      <div class="site-loader__card" aria-hidden="true">
+        <span class="site-loader__flap"></span>
+        <span class="site-loader__letter"></span>
+      </div>
+      <p class="site-loader__message" id="loading-message">Loading happy tears...</p>
+    </div>
+
     <div class="site-controls" aria-label="Display preferences">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">
         <span class="control-label">Theme</span>
@@ -48,6 +60,14 @@
           <span>Super</span>
         </span>
       </label>
+      <div class="vibe-control" aria-label="Vibe mode">
+        <span class="control-label">Vibe</span>
+        <div class="vibe-control__buttons">
+          <button type="button" data-vibe-option="classic" aria-pressed="true">Classic</button>
+          <button type="button" data-vibe-option="brazil" aria-pressed="false">Brazil</button>
+          <button type="button" data-vibe-option="new-mexico" aria-pressed="false">NM</button>
+        </div>
+      </div>
     </div>
     <div class="fun-layer" id="fun-layer" aria-hidden="true"></div>
 
@@ -66,53 +86,157 @@
       </figure>
     </div>
 
-    <main class="hero">
-      <div class="hero__content" aria-live="polite">
-        <p class="eyebrow" id="hero-eyebrow">Thank you for being here</p>
-        <h1 id="greeting">Dear friends,</h1>
-        <p id="message" class="message">
-          Thank you for being part of this day. Your kindness, encouragement,
-          and presence mean so much.
-        </p>
-        <p id="signature" class="signature">With gratitude, the hosts</p>
-      </div>
-      <a class="scroll-cue" id="scroll-cue" href="#story" aria-label="Read the next section">
-        <span id="scroll-cue-text">Read more</span>
-        <span class="scroll-cue__mark" aria-hidden="true"></span>
-      </a>
-    </main>
+    <div class="page-wrap" id="page-wrap">
+      <main class="hero">
+        <div class="hero__content" aria-live="polite">
+          <p class="eyebrow" id="hero-eyebrow">Thank you for being here</p>
+          <h1 id="greeting">Dear friends,</h1>
+          <p id="message" class="message">
+            Thank you for being part of this day. Your kindness, encouragement,
+            and presence mean so much.
+          </p>
+          <p id="signature" class="signature">With gratitude, the hosts</p>
+        </div>
+        <a class="scroll-cue" id="scroll-cue" href="#story" aria-label="Read the next section">
+          <span id="scroll-cue-text">Read more</span>
+          <span class="scroll-cue__mark" aria-hidden="true"></span>
+        </a>
+      </main>
 
-    <section class="story" id="story" aria-labelledby="story-title">
-      <div class="story__inner">
-        <p class="section-kicker" id="story-kicker">A note</p>
-        <h2 id="story-title">A simple thank-you</h2>
-        <div class="story__copy">
-          <p id="story-paragraph-1">
-            This demo keeps the public version generic while showing how
-            personalized routes can work.
-          </p>
-          <p id="story-paragraph-2">
-            Use the guest configuration and CSV file to add private names,
-            photos, and messages in your own copy.
-          </p>
-          <p id="story-paragraph-3">
-            The same page can serve English and Brazilian Portuguese routes
-            without needing separate templates.
+      <section class="story" id="story" aria-labelledby="story-title">
+        <div class="story__inner">
+          <p class="section-kicker" id="story-kicker">A note</p>
+          <h2 id="story-title">A simple thank-you</h2>
+          <div class="story__copy">
+            <p id="story-paragraph-1">
+              This demo keeps the public version generic while showing how
+              personalized routes can work.
+            </p>
+            <p id="story-paragraph-2">
+              Use the guest configuration and CSV file to add private names,
+              photos, and messages in your own copy.
+            </p>
+            <p id="story-paragraph-3">
+              The same page can serve English and Brazilian Portuguese routes
+              without needing separate templates.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="celebration" id="celebration" aria-labelledby="celebration-title">
+        <div class="celebration__inner">
+          <div class="celebration__copy">
+            <p class="section-kicker" id="celebration-kicker">Still celebrating</p>
+            <h2 id="celebration-title">The party keeps going.</h2>
+            <p id="married-counter" class="married-counter">We've been married for 0 days.</p>
+            <p id="celebration-copy">
+              Open the note, press the questionable button, or make the page celebrate one more time.
+            </p>
+          </div>
+          <button class="envelope-card" id="envelope-button" type="button" aria-expanded="false">
+            <span class="envelope-card__art" aria-hidden="true">
+              <span class="envelope-card__back"></span>
+              <span class="envelope-card__letter"></span>
+              <span class="envelope-card__front"></span>
+              <span class="envelope-card__flap"></span>
+            </span>
+            <span class="envelope-card__title" id="envelope-title">Open a little note</span>
+            <span class="envelope-card__copy" id="envelope-copy">A tiny thank-you is tucked inside.</span>
+          </button>
+          <div class="celebration-actions" aria-label="Celebration actions">
+            <button class="action-button action-button--super super-only" id="confetti-button" type="button">Confetti</button>
+            <button class="action-button action-button--danger" id="do-not-press" type="button">Do not press</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery" id="gallery" aria-labelledby="gallery-title">
+        <div class="gallery__inner">
+          <p class="section-kicker" id="gallery-kicker">Shared gallery</p>
+          <h2 id="gallery-title">Little frames from the day.</h2>
+          <div class="polaroid-grid" id="wedding-gallery" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="guestbook" id="guestbook" aria-labelledby="guestbook-title">
+        <div class="guestbook__inner">
+          <div class="guestbook__intro">
+            <p class="section-kicker" id="guestbook-kicker">Guestbook</p>
+            <h2 id="guestbook-title">Leave a message, memory, or prayer.</h2>
+          </div>
+          <form class="guestbook-form" id="guestbook-form">
+            <label>
+              <span id="guestbook-name-label">Your name</span>
+              <input id="guestbook-name" name="name" autocomplete="name" maxlength="80" required>
+            </label>
+            <label>
+              <span id="guestbook-message-label">Your note</span>
+              <textarea id="guestbook-message" name="message" rows="5" maxlength="900" required></textarea>
+            </label>
+            <button class="action-button" id="guestbook-submit" type="submit">Add to the wall</button>
+            <p class="form-status" id="guestbook-status" role="status"></p>
+          </form>
+          <div class="guestbook-wall" id="guestbook-wall" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="photo-upload" id="photo-upload" aria-labelledby="photo-upload-title">
+        <div class="photo-upload__inner">
+          <div>
+            <p class="section-kicker" id="photo-upload-kicker">Photo drop</p>
+            <h2 id="photo-upload-title">Share a wedding picture.</h2>
+            <p id="photo-upload-copy">
+              Send a favorite photo and it can join the shared gallery.
+            </p>
+          </div>
+          <form class="photo-upload-form" id="photo-upload-form" enctype="multipart/form-data">
+            <label>
+              <span id="photo-upload-name-label">Your name</span>
+              <input id="photo-upload-name" name="name" autocomplete="name" maxlength="80">
+            </label>
+            <label class="file-drop" for="photo-upload-file">
+              <span id="photo-upload-file-label">Choose a photo</span>
+              <input id="photo-upload-file" name="photo" type="file" accept="image/*" required>
+            </label>
+            <button class="action-button" id="photo-upload-submit" type="submit">Upload photo</button>
+            <p class="form-status" id="photo-upload-status" role="status"></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="gratitude" aria-labelledby="gratitude-title">
+        <div class="gratitude__inner">
+          <p class="section-kicker" id="gratitude-kicker">With gratitude</p>
+          <h2 id="gratitude-title">Thank you for being part of the story.</h2>
+          <p id="gratitude-copy">
+            For showing up, cheering us on, sending love from afar, and making
+            this season feel full of support.
           </p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="gratitude" aria-labelledby="gratitude-title">
-      <div class="gratitude__inner">
-        <p class="section-kicker" id="gratitude-kicker">With gratitude</p>
-        <h2 id="gratitude-title">Thank you for being part of the story.</h2>
-        <p id="gratitude-copy">
-          For showing up, cheering us on, sending love from afar, and making
-          this season feel full of support.
-        </p>
-      </div>
-    </section>
+      <section class="closing-signature" aria-label="Final signature">
+        <p class="closing-signature__text" id="animated-signature" data-signature="With love, John & Amanda"></p>
+        <p class="closing-signature__vibe" id="vibe-phrase">So glad you were here.</p>
+      </section>
+    </div>
+
+    <div class="panic-note" id="panic-note" aria-live="polite" hidden>
+      Button pressed. Cake secured. Dance floor unlocked.
+    </div>
+
+    <div class="note-modal" id="note-modal" hidden aria-hidden="true">
+      <button class="note-modal__backdrop" type="button" data-note-close aria-label="Close note"></button>
+      <article class="note-modal__card" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+        <button class="note-modal__close" type="button" data-note-close aria-label="Close note">&times;</button>
+        <p class="section-kicker" id="note-modal-kicker">A little note</p>
+        <h2 id="note-modal-title">For you</h2>
+        <p id="note-modal-message"></p>
+      </article>
+    </div>
+
+    <audio id="vibe-audio" preload="none"></audio>
 
     <script src="/js/site-config.js"></script>
     <script src="/js/app.js"></script>

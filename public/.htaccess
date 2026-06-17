@@ -8,7 +8,7 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
+RewriteRule ^$ /index.html [L]
 RewriteRule ^(en|pt)(/.*)?$ /index.html [L]
-RewriteRule ^[^.]+$ /index.html [L]
 
-ErrorDocument 404 /index.html
+ErrorDocument 404 /404.html

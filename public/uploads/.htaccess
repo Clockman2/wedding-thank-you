@@ -1,0 +1,6 @@
+Options -Indexes
+
+<FilesMatch "\.(jpe?g|png|webp)$">
+  Require all granted
+</FilesMatch>
+
